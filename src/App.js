@@ -1,17 +1,18 @@
 
 import './App.css';
 import * as THREE from 'three';
-import {Canvas, useLoader} from 'react-three-fiber';
-import asteroidImg from './assets/asteroid-real.png'
-import { Suspense, useCallback, useMemo } from 'react';
+import {Canvas, useFrame, useLoader} from 'react-three-fiber';
+import asteroidImg from './assets/cartoonStar.png'
+import { Suspense, useCallback, useMemo, useRef } from 'react';
 import { Float16BufferAttribute } from 'three';
 
 function Points () {
   const imgTexture = useLoader(THREE.TextureLoader, asteroidImg)
+  const bufferRef = useRef();
   //graphing using trig/ sin
   let t = 0; //phase shift
   let f = 0.002; //drives frequency
-  let a = 3; //amplitude
+  let a = 4; //amplitude
   const graph = useCallback((x,z) => {
     return Math.sin(f * (x ** 2 + z ** 2 + t)) * a;
   }, [t,f,a])  //dependencies to change the graph
@@ -33,12 +34,32 @@ function Points () {
     return new Float32Array(positions)
   }, [count, sep])
 
+  useFrame(() => {
+    t += 5
+    const positions = bufferRef.current.array
+
+    let i = 0;
+    for (let xi = 0; xi < count; xi++){
+      for(let zi = 0; zi < count; zi++){
+        let x = sep * (xi - count / 2);
+        let z = sep * (zi - count / 2);
+  
+        positions[i+1] = graph(x,z);
+        i += 3;
+      }
+    }
+
+    bufferRef.current.needsUpdate = true
+  })
+
+  
 
   return (
     <points>
       <bufferGeometry attach="geometry">
         <bufferAttribute 
-          attachObject= {['attributes', 'position']}
+          ref={bufferRef}
+          attachObject={['attributes', 'position']}
           array={positions}
           count={positions.length / 3}
           itemSize={3}
@@ -47,7 +68,7 @@ function Points () {
       <pointsMaterial
           attach="material"
           map={imgTexture}
-          color={0x00AAFF}
+          color={0xFFFF00}
           sizeAttenuation
           transparent={false} //makes the transparency not blac
           alphaTest={0.5}
@@ -62,7 +83,7 @@ function AnimationCanvas () {
   return (
     <Canvas
       colorManagement={false}
-      camera={{position: [100, 10, 0], fav: 75}}
+      camera={{position: [100, 10, 0], fav: 76}}
     >
         <Points />
 
